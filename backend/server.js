@@ -3,6 +3,7 @@ const express = require("express");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
 const dns = require("dns").promises;
+
 require("dotenv").config();
 
 const app = express();
@@ -13,8 +14,10 @@ app.use(express.json());
 // ===============================
 // Gmail Transporter
 // ===============================
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
+
   auth: {
     user: process.env.MY_EMAIL,
     pass: process.env.EMAIL_PASS,
@@ -31,12 +34,51 @@ transporter.verify((error) => {
 });
 
 // ===============================
+// Check-Mail Email Validation
+// ===============================
+
+async function validateEmailWithCheckMail(email) {
+  try {
+    const response = await fetch("https://api.check-mail.org/v2/", {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Bearer ${process.env.CHECKMAIL_API_KEY}`,
+      },
+
+      body: new URLSearchParams({
+        email: email,
+      }),
+
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Check-Mail API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return data;
+  } catch (error) {
+    console.error("❌ Check-Mail validation error:", error.message);
+
+    return null;
+  }
+};
+
+// ===============================
 // Contact Form
 // ===============================
+
 app.post("/api/contact", async (req, res) => {
   const { name, email, subject, message } = req.body;
 
+  // ===============================
   // Required fields
+  // ===============================
+
   if (!name?.trim() || !email?.trim() || !message?.trim()) {
     return res.status(400).json({
       success: false,
@@ -52,6 +94,7 @@ app.post("/api/contact", async (req, res) => {
   // ===============================
   // Basic Email Validation
   // ===============================
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!emailRegex.test(cleanEmail)) {
@@ -62,18 +105,59 @@ app.post("/api/contact", async (req, res) => {
   }
 
   // ===============================
-  // Test Email Block
+  // Check-Mail API Validation
   // ===============================
-  if (cleanEmail === "test@gmail.com") {
+
+  const emailCheck = await validateEmailWithCheckMail(cleanEmail);
+
+  // API unavailable
+  if (!emailCheck) {
+    return res.status(503).json({
+      success: false,
+      message: "Unable to verify your email. Please try again.",
+    });
+  }
+
+  console.log("📧 Email verification:", {
+    email: cleanEmail,
+    valid: emailCheck.valid,
+    block: emailCheck.block,
+    disposable: emailCheck.is_disposable,
+    risk: emailCheck.risk,
+    reason: emailCheck.reason,
+  });
+
+  // ===============================
+  // Block invalid / risky emails
+  // ===============================
+
+  if (emailCheck.valid !== true) {
     return res.status(400).json({
       success: false,
-      message: "This email address is restricted from submitting the form.",
+      message: "Please enter a valid email address.",
+    });
+  }
+
+  // Block disposable / suspicious emails
+  if (emailCheck.block === true) {
+    let errorMessage = "This email address cannot be used.";
+
+    if (emailCheck.is_disposable === true) {
+      errorMessage = "Temporary or disposable email addresses are not allowed.";
+    } else if (emailCheck.reason) {
+      errorMessage = "This email address could not be verified.";
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: errorMessage,
     });
   }
 
   // ===============================
-  // Check Email Domain
+  // Check Email Domain / MX
   // ===============================
+
   const domain = cleanEmail.split("@")[1];
 
   try {
@@ -95,17 +179,27 @@ app.post("/api/contact", async (req, res) => {
   // ===============================
   // 1. Email to YOU
   // ===============================
+
   const adminEmail = {
     from: `"Portfolio Contact" <${process.env.MY_EMAIL}>`,
+
     to: process.env.MY_EMAIL,
+
     replyTo: cleanEmail,
+
     subject: cleanSubject
       ? `Portfolio: ${cleanSubject}`
       : `New Message from ${cleanName}`,
 
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 650px; margin: auto;">
-        
+      <div
+        style="
+          font-family: Arial, sans-serif;
+          max-width: 650px;
+          margin: auto;
+        "
+      >
+
         <h2>New Portfolio Contact</h2>
 
         <p>
@@ -122,7 +216,9 @@ app.post("/api/contact", async (req, res) => {
             : ""
         }
 
-        <p><strong>Message:</strong></p>
+        <p>
+          <strong>Message:</strong>
+        </p>
 
         <div
           style="
@@ -142,10 +238,14 @@ app.post("/api/contact", async (req, res) => {
   // ===============================
   // 2. Auto Reply to VISITOR
   // ===============================
+
   const visitorEmail = {
     from: `"Nofil - Web Developer" <${process.env.MY_EMAIL}>`,
+
     to: cleanEmail,
+
     replyTo: process.env.MY_EMAIL,
+
     subject: "Thank you for reaching out!",
 
     text: `Hi ${cleanName},
@@ -155,6 +255,7 @@ Thank you for getting in touch through my portfolio website.
 I have received your message and will get back to you as soon as possible.
 
 Best regards,
+
 Nofil
 Web Developer`,
 
@@ -185,7 +286,13 @@ Web Developer`,
           as soon as possible.
         </p>
 
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;" />
+        <hr
+          style="
+            border: 0;
+            border-top: 1px solid #eee;
+            margin: 25px 0;
+          "
+        />
 
         <p>
           <strong>Your message:</strong>
@@ -215,14 +322,15 @@ Web Developer`,
   // ===============================
   // SEND EMAILS
   // ===============================
+
   try {
-    // First send message to YOU
+    // Send message to YOU
     const adminResult = await transporter.sendMail(adminEmail);
 
     console.log("✅ Admin email sent");
     console.log("Message ID:", adminResult.messageId);
 
-    // Then immediately send auto-reply to visitor
+    // Send auto-reply to visitor
     try {
       const visitorResult = await transporter.sendMail(visitorEmail);
 
@@ -253,8 +361,10 @@ Web Developer`,
 // ===============================
 // Start Server
 // ===============================
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+

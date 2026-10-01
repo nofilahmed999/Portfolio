@@ -831,36 +831,19 @@ const ContactSection = () => {
 
   const validate = () => {
     const errs = {};
+
     if (!formState.name.trim()) errs.name = "Name is required";
+
     if (!formState.email.trim()) {
       errs.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formState.email)) {
       errs.email = "Please enter a valid email address";
-    } else if (formState.email.trim().toLowerCase() === "test@gmail.com") {
-      errs.email = "This email address is restricted from submitting the form.";
     }
-    // else if (formState.email.trim().toLowerCase() === "test123@gmail.com") {
-    //   errs.email = "This email address is restricted from submitting the form.";
-    // }
-    // else if (formState.email.trim().toLowerCase() === "test1@gmail.com") {
-    //   errs.email = "This email address is restricted from submitting the form.";
-    // }
-    // else if (formState.email.trim().toLowerCase() === "test2@gmail.com") {
-    //   errs.email = "This email address is restricted from submitting the form.";
-    // }
-    // else if (formState.email.trim().toLowerCase() === "test3@gmail.com") {
-    //   errs.email = "This email address is restricted from submitting the form.";
-    // }
-    // else if (formState.email.trim().toLowerCase() === "test12@gmail.com") {
-    //   errs.email = "This email address is restricted from submitting the form.";
-    // }
-    // else if (formState.email.trim().toLowerCase() === "test23@gmail.com") {
-    //   errs.email = "This email address is restricted from submitting the form.";
-    // }
-    // else if (formState.email.trim().toLowerCase() === "test234@gmail.com") {
-    //   errs.email = "This email address is restricted from submitting the form.";
-    // }
-    if (!formState.message.trim()) errs.message = "Message is required";
+
+    if (!formState.message.trim()) {
+      errs.message = "Message is required";
+    }
+
     return errs;
   };
 
@@ -869,6 +852,7 @@ const ContactSection = () => {
     setServerError("");
 
     const validationErrors = validate();
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -879,20 +863,23 @@ const ContactSection = () => {
 
     try {
       // Point this to your Express backend URL
-      const response = await fetch("http://localhost:5000/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formState),
-      });
+      const response = await fetch(
+        "https://portfolio-topaz-kappa-6y6qbdplta.vercel.app/api/contact",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formState),
+        }
+      );
 
       const data = await response.json();
 
       if (response.ok && data.success) {
         setSubmitted(true);
       } else {
-        // Displays backend validation error (e.g. Non-existent domain)
+        // Displays backend validation error from Check-Mail API
         setServerError(data.message || "Failed to send message.");
       }
     } catch (err) {
@@ -941,6 +928,7 @@ const ContactSection = () => {
                 <span className="block text-[var(--muted-2)] text-[12px] mb-1">
                   EMAIL
                 </span>
+
                 <a
                   href="mailto:codebynofil@gmail.com"
                   className="text-[var(--foreground)] hover:text-[var(--muted-2)] transition-colors duration-200 text-sm font-sans font-medium lowercase"
@@ -953,6 +941,7 @@ const ContactSection = () => {
                 <span className="block text-[var(--muted-2)] text-[12px] mb-1">
                   PHONE
                 </span>
+
                 <a
                   href="tel:+923228151105"
                   className="text-[var(--foreground)] hover:text-[var(--muted-2)] transition-colors duration-200 text-sm font-sans font-medium"
@@ -960,14 +949,15 @@ const ContactSection = () => {
                   +92 322 8151105
                 </a>
               </div>
-
-              
             </div>
 
             {/* Social Links */}
             <div className="flex flex-col gap-2.5 pt-2 text-xs font-mono font-semibold uppercase tracking-wider">
               {[
-                { label: "GitHub", url: "https://github.com/nofilahmed999" },
+                {
+                  label: "GitHub",
+                  url: "https://github.com/nofilahmed999",
+                },
                 {
                   label: "LinkedIn",
                   url: "https://www.linkedin.com/in/nofil-ahmed-b99576409/",
@@ -981,6 +971,7 @@ const ContactSection = () => {
                   className="inline-flex items-center gap-1.5 text-[var(--muted-2)] hover:text-[var(--foreground)] transition-colors duration-200"
                 >
                   <span>{link.label}</span>
+
                   <svg
                     width="12"
                     height="12"
@@ -1007,9 +998,11 @@ const ContactSection = () => {
                 <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xl font-bold">
                   ✓
                 </div>
+
                 <h3 className="text-xl font-bold text-[var(--foreground)]">
                   Message Sent Successfully
                 </h3>
+
                 <p className="text-sm text-[var(--muted)] max-w-sm">
                   Thank you for reaching out. I have received your message and
                   will be in touch shortly.
@@ -1029,20 +1022,29 @@ const ContactSection = () => {
                   >
                     Your Name *
                   </label>
+
                   <input
                     id="name"
                     type="text"
                     placeholder="Enter your name"
                     value={formState.name}
                     onChange={(e) =>
-                      setFormState((s) => ({ ...s, name: e.target.value }))
+                      setFormState((s) => ({
+                        ...s,
+                        name: e.target.value,
+                      }))
                     }
                     className={`w-full px-4 py-3 rounded-lg bg-[var(--background)] border ${
-                      errors.name ? "border-red-500" : "border-[var(--border)]"
+                      errors.name
+                        ? "border-red-500"
+                        : "border-[var(--border)]"
                     } text-[var(--foreground)] text-sm outline-none transition-colors duration-200 focus:border-[var(--foreground)]`}
                   />
+
                   {errors.name && (
-                    <p className="text-xs text-red-500 mt-1.5">{errors.name}</p>
+                    <p className="text-xs text-red-500 mt-1.5">
+                      {errors.name}
+                    </p>
                   )}
                 </div>
 
@@ -1054,18 +1056,25 @@ const ContactSection = () => {
                   >
                     Email Address *
                   </label>
+
                   <input
                     id="email"
                     type="email"
                     placeholder="name@example.com"
                     value={formState.email}
                     onChange={(e) =>
-                      setFormState((s) => ({ ...s, email: e.target.value }))
+                      setFormState((s) => ({
+                        ...s,
+                        email: e.target.value,
+                      }))
                     }
                     className={`w-full px-4 py-3 rounded-lg bg-[var(--background)] border ${
-                      errors.email ? "border-red-500" : "border-[var(--border)]"
+                      errors.email
+                        ? "border-red-500"
+                        : "border-[var(--border)]"
                     } text-[var(--foreground)] text-sm outline-none transition-colors duration-200 focus:border-[var(--foreground)]`}
                   />
+
                   {errors.email && (
                     <p className="text-xs text-red-500 mt-1.5">
                       {errors.email}
@@ -1081,13 +1090,17 @@ const ContactSection = () => {
                   >
                     Message / Project Scope *
                   </label>
+
                   <textarea
                     id="message"
                     rows={4}
                     placeholder="Describe your goals or timeline..."
                     value={formState.message}
                     onChange={(e) =>
-                      setFormState((s) => ({ ...s, message: e.target.value }))
+                      setFormState((s) => ({
+                        ...s,
+                        message: e.target.value,
+                      }))
                     }
                     className={`w-full px-4 py-3 rounded-lg bg-[var(--background)] border ${
                       errors.message
@@ -1095,6 +1108,7 @@ const ContactSection = () => {
                         : "border-[var(--border)]"
                     } text-[var(--foreground)] text-sm outline-none resize-y min-h-[120px] transition-colors duration-200 focus:border-[var(--foreground)]`}
                   />
+
                   {errors.message && (
                     <p className="text-xs text-red-500 mt-1.5">
                       {errors.message}
