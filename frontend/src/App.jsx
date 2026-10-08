@@ -19,7 +19,7 @@ function useTheme() {
     try {
       const saved = localStorage.getItem("theme");
       if (saved === "light" || saved === "dark") return saved;
-    } catch {}
+    } catch { }
     // 2. Default must ALWAYS be light on first visit
     return "light";
   });
@@ -36,7 +36,7 @@ function useTheme() {
 
     try {
       localStorage.setItem("theme", theme);
-    } catch {}
+    } catch { }
 
     const timer = setTimeout(() => {
       root.classList.remove("theme-transitioning");
@@ -95,11 +95,10 @@ const ThemeToggle = ({ theme, onToggle }) => (
 // ─── Fast Signature Loader ────────────────────────────────────────────────────
 const SignatureLoader = ({ isFadingOut }) => (
   <div
-    className={`fixed inset-0 z-50 flex h-screen w-full items-center justify-center bg-[#09090b] text-white transition-all duration-700 ease-in-out ${
-      isFadingOut
+    className={`fixed inset-0 z-50 flex h-screen w-full items-center justify-center bg-[#09090b] text-white transition-all duration-700 ease-in-out ${isFadingOut
         ? "opacity-0 -translate-y-full pointer-events-none"
         : "opacity-100 translate-y-0"
-    }`}
+      }`}
   >
     <style>{`
       @keyframes drawSignature {
@@ -303,7 +302,7 @@ const HeroSection = ({ loaded }) => {
               whitespace-nowrap
             "
               >
-                HI 👋, I'M NOFIL AHMED —
+                HI, I'M NOFIL AHMED —
               </p>
 
               {/* Heading */}
@@ -1034,11 +1033,10 @@ const ContactSection = () => {
                         name: e.target.value,
                       }))
                     }
-                    className={`w-full px-4 py-3 rounded-lg bg-[var(--background)] border ${
-                      errors.name
+                    className={`w-full px-4 py-3 rounded-lg bg-[var(--background)] border ${errors.name
                         ? "border-red-500"
                         : "border-[var(--border)]"
-                    } text-[var(--foreground)] text-sm outline-none transition-colors duration-200 focus:border-[var(--foreground)]`}
+                      } text-[var(--foreground)] text-sm outline-none transition-colors duration-200 focus:border-[var(--foreground)]`}
                   />
 
                   {errors.name && (
@@ -1068,11 +1066,10 @@ const ContactSection = () => {
                         email: e.target.value,
                       }))
                     }
-                    className={`w-full px-4 py-3 rounded-lg bg-[var(--background)] border ${
-                      errors.email
+                    className={`w-full px-4 py-3 rounded-lg bg-[var(--background)] border ${errors.email
                         ? "border-red-500"
                         : "border-[var(--border)]"
-                    } text-[var(--foreground)] text-sm outline-none transition-colors duration-200 focus:border-[var(--foreground)]`}
+                      } text-[var(--foreground)] text-sm outline-none transition-colors duration-200 focus:border-[var(--foreground)]`}
                   />
 
                   {errors.email && (
@@ -1102,11 +1099,10 @@ const ContactSection = () => {
                         message: e.target.value,
                       }))
                     }
-                    className={`w-full px-4 py-3 rounded-lg bg-[var(--background)] border ${
-                      errors.message
+                    className={`w-full px-4 py-3 rounded-lg bg-[var(--background)] border ${errors.message
                         ? "border-red-500"
                         : "border-[var(--border)]"
-                    } text-[var(--foreground)] text-sm outline-none resize-y min-h-[120px] transition-colors duration-200 focus:border-[var(--foreground)]`}
+                      } text-[var(--foreground)] text-sm outline-none resize-y min-h-[120px] transition-colors duration-200 focus:border-[var(--foreground)]`}
                   />
 
                   {errors.message && (
